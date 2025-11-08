@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "761780630421",
+    "project_id": "devilmisikat",
+    "storage_bucket": "devilmisikat.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761780630421:android:4851facf0ecb1e74823c9c",
+        "android_client_info": {
+          "package_name": "com.example.proyectofinal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpxJgDcwMiRO92Mba5vwbqVKczvFHd8ik"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
