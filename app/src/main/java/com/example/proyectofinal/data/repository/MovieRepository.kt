@@ -40,4 +40,14 @@ class MovieRepository {
             Result.failure(e)
         }
     }
+
+    // Obtener detalle de película (NUEVO)
+    suspend fun getMovieDetail(movieId: Int): Result<Movie> {
+        return try {
+            val movie = api.getMovieDetail(movieId, apiKey)
+            Result.success(movie)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -11,7 +11,7 @@ object RetrofitInstance {
     private const val BASE_URL = "https://api.themoviedb.org/3/"
 
     // Tu API Key de TMDB (obtenerla de https://www.themoviedb.org/settings/api)
-    const val API_KEY = "438319dcd9fa0f1a6c89a6d8d2a0737a" // TODO: Cambiar por tu API Key
+    const val API_KEY = "438319dcd9fa0f1a6c89a6d8d2a0737a"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
