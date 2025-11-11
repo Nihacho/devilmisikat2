@@ -21,6 +21,8 @@ sealed class Screen(val route: String) {
     }
 }
 
+//Hola Inge
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
