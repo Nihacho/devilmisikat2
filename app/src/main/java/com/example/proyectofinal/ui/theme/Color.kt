@@ -9,3 +9,11 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
+
+// Paleta de colores personalizada
+val RedDominant = Color(0xFFCC0000)
+val BlackPure = Color(0xFF000000)
+val DarkRed = Color(0xFF1A0000)
+val White = Color(0xFFFFFFFF)
+val GrayLight = Color(0xFFF5F5F5)
+val GrayDark = Color(0xFF666666)
