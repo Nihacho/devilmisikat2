@@ -1,6 +1,8 @@
 package com.example.proyectofinal.ui.navigation
 
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -8,25 +10,28 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.proyectofinal.data.model.UserRole
 import com.example.proyectofinal.ui.screens.AdminScreen
-import com.example.proyectofinal.ui.screens.HomeScreen
 import com.example.proyectofinal.ui.screens.LoginScreen
+import com.example.proyectofinal.ui.screens.MainScreen
 import com.example.proyectofinal.ui.screens.MovieDetailScreen
+import com.example.proyectofinal.ui.viewmodel.MoviesViewModel
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
-    object Home : Screen("home")
+    object Home : Screen("home") // This is now the container for the main screens
     object Admin : Screen("admin")
     object MovieDetail : Screen("movie_detail/{movieId}") {
-        fun createRoute(movieId: Int) = "movie_detail/$movieId"
+        fun createRoute(movieId: String) = "movie_detail/$movieId"
     }
 }
 
-//Hola Inge
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
+    
+    // Shared ViewModel
+    val moviesViewModel: MoviesViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -49,32 +54,34 @@ fun AppNavigation() {
             )
         }
 
-        // Pantalla de Usuario Normal (Películas)
+        // Pantalla Principal (con Bottom Navigation)
         composable(Screen.Home.route) {
-            HomeScreen(
+            MainScreen(
+                viewModel = moviesViewModel,
                 onLogout = {
                     currentUserRole = null
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onMovieClick = { movieId ->
-                    navController.navigate(Screen.MovieDetail.createRoute(movieId))
+                onMovieClick = { movie ->
+                    navController.navigate(Screen.MovieDetail.createRoute(movie.id))
                 }
             )
         }
 
-        // Pantalla de Detalle de Película (NUEVO)
+        // Pantalla de Detalle de Película
         composable(
             route = Screen.MovieDetail.route,
             arguments = listOf(
                 navArgument("movieId") {
-                    type = NavType.IntType
+                    type = NavType.StringType
                 }
             )
         ) { backStackEntry ->
-            val movieId = backStackEntry.arguments?.getInt("movieId") ?: 0
+            val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
             MovieDetailScreen(
+                viewModel = moviesViewModel,
                 movieId = movieId,
                 onBack = {
                     navController.popBackStack()

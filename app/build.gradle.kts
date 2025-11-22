@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.proyectofinal"
-    compileSdk = 35 // Ajustado para mayor compatibilidad
+    compileSdk = 36
+    // Ajustado para mayor compatibilidad
 
     defaultConfig {
         applicationId = "com.example.proyectofinal"
@@ -50,10 +51,15 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // Retrofit para TMDB API
+    // Retrofit para TMDB API (se mantiene por si acaso, pero el objetivo es M3U)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    // Media3 (ExoPlayer)
+    implementation("androidx.media3:media3-exoplayer:1.2.0")
+    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation("androidx.media3:media3-common:1.2.0")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

@@ -3,66 +3,36 @@ package com.example.proyectofinal.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.proyectofinal.data.model.Movie
-import com.example.proyectofinal.data.repository.AuthRepository
-import com.example.proyectofinal.data.repository.MovieRepository
-import kotlinx.coroutines.launch
+import com.example.proyectofinal.ui.viewmodel.MoviesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: MoviesViewModel,
     onLogout: () -> Unit,
-    onMovieClick: (Int) -> Unit
+    onMovieClick: (Movie) -> Unit
 ) {
-    var movies by remember { mutableStateOf<List<Movie>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val movieRepository = remember { MovieRepository() }
-    val authRepository = remember { AuthRepository() }
-    val scope = rememberCoroutineScope()
-
-    // Función para cargar películas
-    fun loadMovies() {
-        scope.launch {
-            isLoading = true
-            errorMessage = null
-
-            val result = movieRepository.getPopularMovies()
-            result.onSuccess { movieList ->
-                movies = movieList
-                isLoading = false
-            }.onFailure { error ->
-                errorMessage = error.message ?: "Error desconocido"
-                isLoading = false
-            }
-        }
-    }
-
-    // Cargar películas al iniciar
-    LaunchedEffect(Unit) {
-        loadMovies()
-    }
+    val movies by viewModel.movies.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Películas Populares") },
+                title = { Text("App Películas") },
                 actions = {
-                    TextButton(onClick = {
-                        authRepository.logout()
-                        onLogout()
-                    }) {
-                        Text("Cerrar Sesión")
+                    TextButton(onClick = onLogout) {
+                        Text("Salir")
                     }
                 }
             )
@@ -73,118 +43,49 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                // Estado de carga
-                isLoading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Cargando películas...",
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LinearProgressIndicator(
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp) // Padding for bottom navigation
+                ) {
+                    // Logo Section
+                    item {
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .padding(horizontal = 32.dp)
-                        )
-                    }
-                }
-
-                // Estado de error
-                errorMessage != null -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "❌",
-                            style = MaterialTheme.typography.displayLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Error al cargar películas",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = errorMessage!!,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = { loadMovies() }
+                                .fillMaxWidth()
+                                .height(150.dp)
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text("Reintentar")
+                            // Placeholder for Logo
+                            Text("LOGO EMPRESA", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                         }
                     }
-                }
-
-                // Lista vacía
-                movies.isEmpty() && !isLoading && errorMessage == null -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "🎬",
-                            style = MaterialTheme.typography.displayLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No hay películas disponibles",
-                            style = MaterialTheme.typography.headlineSmall,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Intenta recargar la página",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = { loadMovies() }
-                        ) {
-                            Text("Recargar")
-                        }
+                    
+                    // Popular
+                    item {
+                        SectionTitle(title = "Más Populares")
+                        MovieRow(movies = movies.take(10), onMovieClick = onMovieClick)
                     }
-                }
-
-                // Lista con datos
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(movies) { movie ->
-                            MovieItem(
-                                movie = movie,
-                                onClick = { onMovieClick(movie.id) }
-                            )
-                        }
+                    
+                    // Animated
+                    item {
+                        SectionTitle(title = "Animadas")
+                        MovieRow(movies = movies.filter { it.category == "Animadas" }.ifEmpty { movies.take(5) }, onMovieClick = onMovieClick)
+                    }
+                    
+                    // Sports
+                    item {
+                        SectionTitle(title = "Deportes")
+                        MovieRow(movies = movies.filter { it.category == "Deportes" }.ifEmpty { movies.take(5) }, onMovieClick = onMovieClick)
+                    }
+                    
+                    // News
+                    item {
+                        SectionTitle(title = "Noticias")
+                        MovieRow(movies = movies.filter { it.category == "Noticias" }.ifEmpty { movies.take(5) }, onMovieClick = onMovieClick)
                     }
                 }
             }
@@ -193,81 +94,51 @@ fun HomeScreen(
 }
 
 @Composable
-fun MovieItem(
-    movie: Movie,
-    onClick: () -> Unit
-) {
+fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+fun MovieRow(movies: List<Movie>, onMovieClick: (Movie) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(movies) { movie ->
+            MovieCard(movie = movie, onClick = { onMovieClick(movie) })
+        }
+    }
+}
+
+@Composable
+fun MovieCard(movie: Movie, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .width(140.dp)
+            .height(200.dp)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
-            // Poster
+        Column {
             AsyncImage(
-                model = movie.getPosterUrl(),
+                model = movie.logo,
                 contentDescription = movie.title,
                 modifier = Modifier
-                    .width(100.dp)
-                    .height(150.dp),
+                    .fillMaxWidth()
+                    .height(140.dp),
                 contentScale = ContentScale.Crop
             )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Información
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = movie.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "⭐ ${String.format("%.1f", movie.voteAverage)}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "📅 ${movie.releaseDate.take(4)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = movie.overview,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 3,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Text(
-                    text = "Ver más →",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                modifier = Modifier.padding(8.dp)
+            )
         }
     }
 }
