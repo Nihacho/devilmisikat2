@@ -1,28 +1,31 @@
 package com.example.proyectofinal.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import com.example.proyectofinal.data.model.User
 import com.example.proyectofinal.data.repository.AuthRepository
 
 @Composable
 fun UserScreen(
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit,
     onLogout: () -> Unit
 ) {
-    val authRepository = AuthRepository()
-    val user = authRepository.getCurrentUser()
+    val authRepository = remember { AuthRepository() }
+    // Estado para almacenar el usuario cargado
+    var user by remember { mutableStateOf<User?>(null) }
+    
+    // Cargar usuario de forma asíncrona usando LaunchedEffect
+    LaunchedEffect(Unit) {
+        user = authRepository.getCurrentUser()
+    }
 
     Column(
         modifier = Modifier
@@ -49,10 +52,25 @@ fun UserScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // User Info
+        val displayName = if (user != null && (user!!.firstName.isNotBlank() || user!!.lastName.isNotBlank())) {
+            "${user!!.firstName} ${user!!.lastName}".trim()
+        } else {
+            user?.email ?: "Cargando..."
+        }
+        
         Text(
-            text = user?.email ?: "Usuario",
-            style = MaterialTheme.typography.headlineSmall
+            text = displayName,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
         )
+        
+        if (user != null && displayName != user!!.email) {
+            Text(
+                text = user!!.email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         
         Text(
             text = "Miembro desde 2024",
@@ -64,7 +82,33 @@ fun UserScreen(
 
         // Settings Section
         SettingsItem(title = "Editar Perfil")
-        SettingsItem(title = "Configuración de App")
+        
+        // Theme Toggle
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Modo Oscuro",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Switch(
+                    checked = isDarkTheme,
+                    onCheckedChange = onThemeChanged
+                )
+            }
+        }
+
         SettingsItem(title = "Ayuda y Soporte")
 
         Spacer(modifier = Modifier.weight(1f))
@@ -97,7 +141,11 @@ fun SettingsItem(title: String) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = title, 
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

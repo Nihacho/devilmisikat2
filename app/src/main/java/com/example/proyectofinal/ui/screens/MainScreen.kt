@@ -28,6 +28,8 @@ sealed class BottomNavItem(val route: String, val icon: androidx.compose.ui.grap
 @Composable
 fun MainScreen(
     viewModel: MoviesViewModel,
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onMovieClick: (Movie) -> Unit
 ) {
@@ -72,11 +74,7 @@ fun MainScreen(
             composable(BottomNavItem.Home.route) {
                 HomeScreen(
                     viewModel = viewModel,
-                    onLogout = onLogout, // Logout handled in User screen too, but Home has it in TopBar in my previous code. 
-                                        // I removed TopBar from Home in MainScreen context usually, but I kept it in HomeScreen.kt.
-                                        // Ideally HomeScreen shouldn't have the logout button if it's in a tab. 
-                                        // The user requirement said "Usuario... option to logout". 
-                                        // So I should probably remove logout from Home TopBar.
+                    onLogout = onLogout, 
                     onMovieClick = onMovieClick
                 )
             }
@@ -87,7 +85,11 @@ fun MainScreen(
                 MyListsScreen(viewModel = viewModel, onMovieClick = onMovieClick)
             }
             composable(BottomNavItem.User.route) {
-                UserScreen(onLogout = onLogout)
+                UserScreen(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChanged = onThemeChanged,
+                    onLogout = onLogout
+                )
             }
         }
     }

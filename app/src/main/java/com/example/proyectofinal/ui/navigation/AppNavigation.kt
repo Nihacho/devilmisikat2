@@ -26,7 +26,10 @@ sealed class Screen(val route: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    isDarkTheme: Boolean,
+    onThemeChanged: (Boolean) -> Unit
+) {
     val navController = rememberNavController()
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
     
@@ -58,6 +61,8 @@ fun AppNavigation() {
         composable(Screen.Home.route) {
             MainScreen(
                 viewModel = moviesViewModel,
+                isDarkTheme = isDarkTheme,
+                onThemeChanged = onThemeChanged,
                 onLogout = {
                     currentUserRole = null
                     navController.navigate(Screen.Login.route) {
