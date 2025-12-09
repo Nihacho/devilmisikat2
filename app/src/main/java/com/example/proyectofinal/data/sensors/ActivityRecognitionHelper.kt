@@ -1,137 +1,88 @@
 package com.example.proyectofinal.data.sensors
 
 import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.os.Build
-import android.util.Log
-import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.ActivityRecognition
-import com.google.android.gms.location.ActivityRecognitionResult
+import com.google.android.gms.location.ActivityTransition
+import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.DetectedActivity
+import com.google.android.gms.location.ActivityRecognitionResult
 
 class ActivityRecognitionHelper(
     private val context: Context,
     private val onActivityDetected: (String, Int) -> Unit
 ) {
 
-    companion object {
-        private const val ACTION_ACTIVITY_DETECTION = "com.example.proyectofinal.ACTIVITY_DETECTION"
-    }
-
-    private var isReceiverRegistered = false
-
-    private val activityReceiver = object : BroadcastReceiver() {
-        override fun onReceive(ctx: Context?, intent: Intent?) {
-            if (intent?.action != ACTION_ACTIVITY_DETECTION) return
-
+    private val client = ActivityRecognition.getClient(context)
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
             if (ActivityRecognitionResult.hasResult(intent)) {
-                val result = ActivityRecognitionResult.extractResult(intent)
-                result?.probableActivities?.let { activities ->
-                    handleDetectedActivities(activities)
+                val result = ActivityRecognitionResult.extractResult(intent!!)
+                result?.mostProbableActivity?.let { activity ->
+                    val type = getActivityString(activity.type)
+                    onActivityDetected(type, activity.confidence)
                 }
             }
         }
     }
 
     private val pendingIntent: PendingIntent by lazy {
-        val intent = Intent(ACTION_ACTIVITY_DETECTION).apply {
-            setPackage(context.packageName)
-        }
-
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val intent = Intent(context, ActivityReceiver::class.java)
+        PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
-
-        PendingIntent.getBroadcast(context, 0, intent, flags)
+        )
     }
 
     fun iniciar() {
-        if (isReceiverRegistered) {
-            try {
-                context.unregisterReceiver(activityReceiver)
-                isReceiverRegistered = false
-                Log.d("ActivityRecognition", "🔄 Desregistrado antes de re-registrar")
-            } catch (e: Exception) {
-                Log.e("ActivityRecognition", "⚠️ Error al desregistrar: ${e.message}")
-            }
-        }
-
-        try {
-            val filter = IntentFilter(ACTION_ACTIVITY_DETECTION)
-
-            ContextCompat.registerReceiver(
-                context,
-                activityReceiver,
-                filter,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-            )
-
-            isReceiverRegistered = true
-            Log.d("ActivityRecognition", "✅ Receiver registrado correctamente")
-        } catch (e: Exception) {
-            Log.e("ActivityRecognition", "❌ Error al registrar receiver: ${e.message}")
-            return
-        }
-
-        try {
-            ActivityRecognition.getClient(context)
-                .requestActivityUpdates(2000, pendingIntent)
-                .addOnSuccessListener {
-                    Log.d("ActivityRecognition", "✅ Actualizaciones iniciadas")
-                }
-                .addOnFailureListener { e ->
-                    Log.e("ActivityRecognition", "❌ Error al iniciar: ${e.message}")
-                }
-        } catch (e: SecurityException) {
-            Log.e("ActivityRecognition", "❌ SecurityException: ${e.message}")
-        }
+        // En una implementación real, se debe registrar el Receiver
+        // Aquí simplificamos simulando o conectando directamnete si fuera un servicio
+        // Para este proyecto, asumiremos que ActivityReceiver envía un broadcast local
+        LocalBroadcastManager.getInstance(context).registerReceiver(
+            receiver,
+            IntentFilter("ACTIVITY_DETECTED")
+        )
+        
+        client.requestActivityUpdates(1000L, pendingIntent)
+            .addOnSuccessListener { /* Éxito */ }
+            .addOnFailureListener { /* Error */ }
     }
 
     fun detener() {
-        try {
-            try {
-                ActivityRecognition.getClient(context)
-                    .removeActivityUpdates(pendingIntent)
-            } catch (e: SecurityException) {
-                Log.e("ActivityRecognition", "SecurityException al remover: ${e.message}")
-            }
-
-            if (isReceiverRegistered) {
-                context.unregisterReceiver(activityReceiver)
-                isReceiverRegistered = false
-            }
-
-            Log.d("ActivityRecognition", "✅ Detenido correctamente")
-        } catch (e: Exception) {
-            Log.e("ActivityRecognition", "❌ Error al detener: ${e.message}")
-        }
+        client.removeActivityUpdates(pendingIntent)
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
     }
 
-    private fun handleDetectedActivities(activities: List<DetectedActivity>) {
-        val bestActivity = activities.maxByOrNull { it.confidence }
-        bestActivity?.let { activity ->
-            val name = getActivityName(activity.type)
-            val confidence = activity.confidence
-            onActivityDetected(name, confidence)
-            Log.d("ActivityRecognition", "Detectado: $name ($confidence%)")
-        }
-    }
-
-    private fun getActivityName(type: Int): String {
+    private fun getActivityString(type: Int): String {
         return when (type) {
-            DetectedActivity.STILL -> "Quieto 🧍"
-            DetectedActivity.WALKING -> "Caminando 🚶"
-            DetectedActivity.RUNNING -> "Corriendo 🏃"
-            DetectedActivity.ON_BICYCLE -> "Bicicleta 🚴"
-            DetectedActivity.IN_VEHICLE -> "Vehículo 🚗"
-            DetectedActivity.ON_FOOT -> "A Pie 👟"
-            DetectedActivity.TILTING -> "Inclinando 📐"
-            else -> "Desconocido ❓"
+            DetectedActivity.IN_VEHICLE -> "En vehículo"
+            DetectedActivity.ON_BICYCLE -> "En bicicleta"
+            DetectedActivity.ON_FOOT -> "A pie"
+            DetectedActivity.RUNNING -> "Corriendo"
+            DetectedActivity.STILL -> "Quieto"
+            DetectedActivity.TILTING -> "Inclinación"
+            DetectedActivity.WALKING -> "Caminando"
+            else -> "Desconocido"
+        }
+    }
+}
+
+class ActivityReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (ActivityRecognitionResult.hasResult(intent)) {
+            val result = ActivityRecognitionResult.extractResult(intent)
+            // Reenviar a través de LocalBroadcastManager para que la UI lo reciba
+            // Nota: En una app de producción esto se maneja mejor con un Service o Flow
+            val forwardIntent = Intent("ACTIVITY_DETECTED")
+            forwardIntent.putExtras(intent)
+            LocalBroadcastManager.getInstance(context).sendBroadcast(forwardIntent)
         }
     }
 }

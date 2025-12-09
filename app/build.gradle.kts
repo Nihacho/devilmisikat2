@@ -46,6 +46,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
 
     implementation("com.google.android.gms:play-services-location:21.1.0")
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 
     // Firebase Auth with Google
     implementation("com.google.android.gms:play-services-auth:20.7.0")
