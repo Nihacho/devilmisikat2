@@ -23,6 +23,13 @@ class MoviesViewModel : ViewModel() {
     )
     val userLists: StateFlow<Map<String, List<Movie>>> = _userLists.asStateFlow()
 
+    // ESTADO DEL REPRODUCTOR
+    private val _currentPlayingMovie = MutableStateFlow<Movie?>(null)
+    val currentPlayingMovie: StateFlow<Movie?> = _currentPlayingMovie.asStateFlow()
+
+    private val _isPlayerMinimized = MutableStateFlow(false)
+    val isPlayerMinimized: StateFlow<Boolean> = _isPlayerMinimized.asStateFlow()
+
     init {
         fetchMovies()
     }
@@ -45,7 +52,7 @@ class MoviesViewModel : ViewModel() {
     }
     
     fun getMoviesByCategory(category: String): List<Movie> {
-         return _movies.value.filter { it.category == category }
+        return _movies.value.filter { it.category == category }
     }
     
     fun searchMovies(query: String): List<Movie> {
@@ -64,11 +71,39 @@ class MoviesViewModel : ViewModel() {
     fun addMovieToList(listName: String, movie: Movie) {
         val currentLists = _userLists.value.toMutableMap()
         val list = currentLists[listName]?.toMutableList() ?: mutableListOf()
-        // Check if movie is already in list by ID
         if (list.none { it.id == movie.id }) {
             list.add(movie)
             currentLists[listName] = list
             _userLists.value = currentLists
         }
     }
-}
+
+    // Funciones del Reproductor
+    fun playMovie(movie: Movie) {
+        _currentPlayingMovie.value = movie
+        _isPlayerMinimized.value = false
+    }
+
+    fun closePlayer() {
+        _currentPlayingMovie.value = null
+        _isPlayerMinimized.value = false
+    }
+
+    fun minimizePlayer() {
+        _isPlayerMinimized.value = true
+    }
+
+    fun maximizePlayer() {
+        _isPlayerMinimized.value = false
+    }
+
+    // IPTV
+    fun addIptvMovies(newMovies: List<Movie>) {
+        val current = _movies.value.toMutableList()
+        current.addAll(newMovies)
+        _movies.value = current
+    }
+
+    suspend fun updateUserProfile(firstName: String, lastName: String) {
+        com.example.proyectofinal.data.repository.AuthRepository().updateUserProfile(firstName, lastName)
+    }

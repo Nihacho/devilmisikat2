@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 import com.example.proyectofinal.data.model.User
 import com.example.proyectofinal.data.repository.AuthRepository
 
@@ -16,7 +18,8 @@ import com.example.proyectofinal.data.repository.AuthRepository
 fun UserScreen(
     isDarkTheme: Boolean,
     onThemeChanged: (Boolean) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToIptv: () -> Unit
 ) {
     val authRepository = remember { AuthRepository() }
     // Estado para almacenar el usuario cargado
@@ -81,7 +84,64 @@ fun UserScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Settings Section
-        SettingsItem(title = "Editar Perfil")
+        // Settings Section
+        var isEditing by remember { mutableStateOf(false) }
+        var newFirstName by remember { mutableStateOf(user?.firstName ?: "") }
+        var newLastName by remember { mutableStateOf(user?.lastName ?: "") }
+        val scope = rememberCoroutineScope()
+        val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<com.example.proyectofinal.ui.viewmodel.MoviesViewModel>()
+
+        if (isEditing) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = newFirstName,
+                    onValueChange = { newFirstName = it },
+                    label = { Text("Nombre") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newLastName,
+                    onValueChange = { newLastName = it },
+                    label = { Text("Apellido") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { isEditing = false }) {
+                        Text("Cancelar")
+                    }
+                    Button(onClick = {
+                        scope.launch {
+                            viewModel.updateUserProfile(newFirstName, newLastName)
+                            user = authRepository.getCurrentUser() // Refresh local user
+                            isEditing = false
+                        }
+                    }) {
+                        Text("Guardar")
+                    }
+                }
+            }
+        } else {
+            SettingsItem(
+                title = "Editar Perfil", 
+                onClick = { 
+                    isEditing = true 
+                    newFirstName = user?.firstName ?: ""
+                    newLastName = user?.lastName ?: ""
+                }
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Conexiones", style = MaterialTheme.typography.titleMedium, modifier = Modifier.align(Alignment.Start))
+        SettingsItem(
+            title = "Conectar IPTV (Xtream Codes)",
+            onClick = onNavigateToIptv
+        )
         
         // Theme Toggle
         Card(
@@ -130,11 +190,12 @@ fun UserScreen(
 }
 
 @Composable
-fun SettingsItem(title: String) {
+fun SettingsItem(title: String, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(

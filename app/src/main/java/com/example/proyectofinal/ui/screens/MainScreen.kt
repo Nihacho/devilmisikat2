@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.proyectofinal.ui.screens.IptvLoginScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -88,7 +89,15 @@ fun MainScreen(
                 UserScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeChanged = onThemeChanged,
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    onNavigateToIptv = { navController.navigate("iptv_login") }
+                )
+            }
+            
+            composable("iptv_login") {
+                IptvLoginScreen(
+                    viewModel = viewModel,
+                    onLoginSuccess = { navController.popBackStack() }
                 )
             }
         }

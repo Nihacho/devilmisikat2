@@ -36,74 +36,85 @@ fun AppNavigation(
     // Shared ViewModel
     val moviesViewModel: MoviesViewModel = viewModel()
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Login.route
-    ) {
-        // Pantalla de Login
-        composable(Screen.Login.route) {
-            LoginScreen(
-                onLoginSuccess = { role ->
-                    currentUserRole = role
-                    when (role) {
-                        UserRole.USER -> navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+    Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Login.route
+        ) {
+            // Pantalla de Login
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onLoginSuccess = { role ->
+                        currentUserRole = role
+                        when (role) {
+                            UserRole.USER -> navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Login.route) { inclusive = true }
+                            }
+                            UserRole.ADMIN -> navController.navigate(Screen.Admin.route) {
+                                popUpTo(Screen.Login.route) { inclusive = true }
+                            }
                         }
-                        UserRole.ADMIN -> navController.navigate(Screen.Admin.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                )
+            }
+
+            // Pantalla Principal (con Bottom Navigation)
+            composable(Screen.Home.route) {
+                MainScreen(
+                    viewModel = moviesViewModel,
+                    isDarkTheme = isDarkTheme,
+                    onThemeChanged = onThemeChanged,
+                    onLogout = {
+                        currentUserRole = null
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onMovieClick = { movie ->
+                        // navigate to detail or play directly? Detail for now
+                        navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                    }
+                )
+            }
+
+            // Pantalla de Detalle de Película
+            composable(
+                route = Screen.MovieDetail.route,
+                arguments = listOf(
+                    navArgument("movieId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
+                MovieDetailScreen(
+                    viewModel = moviesViewModel,
+                    movieId = movieId,
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // Pantalla de Admin (Sensores)
+            composable(Screen.Admin.route) {
+                AdminScreen(
+                    onLogout = {
+                        currentUserRole = null
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
                         }
                     }
-                }
-            )
+                )
+            }
         }
-
-        // Pantalla Principal (con Bottom Navigation)
-        composable(Screen.Home.route) {
-            MainScreen(
-                viewModel = moviesViewModel,
-                isDarkTheme = isDarkTheme,
-                onThemeChanged = onThemeChanged,
-                onLogout = {
-                    currentUserRole = null
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                onMovieClick = { movie ->
-                    navController.navigate(Screen.MovieDetail.createRoute(movie.id))
-                }
-            )
-        }
-
-        // Pantalla de Detalle de Película
-        composable(
-            route = Screen.MovieDetail.route,
-            arguments = listOf(
-                navArgument("movieId") {
-                    type = NavType.StringType
-                }
-            )
-        ) { backStackEntry ->
-            val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
-            MovieDetailScreen(
-                viewModel = moviesViewModel,
-                movieId = movieId,
-                onBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        // Pantalla de Admin (Sensores)
-        composable(Screen.Admin.route) {
-            AdminScreen(
-                onLogout = {
-                    currentUserRole = null
-                    navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
+        
+        // Reproductor de Video (Global Overlay)
+        com.example.proyectofinal.ui.screens.VideoPlayerOverlay(
+            viewModel = moviesViewModel,
+            onMovieClick = { movie ->
+                 navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+            }
+        )
     }
 }
