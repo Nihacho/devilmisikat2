@@ -32,10 +32,11 @@ class XtreamRepository {
             val response = service.authenticate(user, pass)
 
             if (response.isSuccessful && response.body() != null) {
-                apiService = service
-                baseUrl = validUrl
-                username = user
-                password = pass
+                // Initialize class properties
+                this.apiService = service
+                this.baseUrl = validUrl
+                this.username = user
+                this.password = pass
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Login failed: ${response.code()}"))
@@ -46,11 +47,11 @@ class XtreamRepository {
     }
 
     suspend fun getLiveStreams(): List<Movie> {
-        val service = apiService ?: return emptyList()
+        val service = this.apiService ?: return emptyList()
         try {
-            val response = service.getLiveStreams(username, password)
+            val response = service.getLiveStreams(this.username, this.password)
             if (response.isSuccessful) {
-                return response.body()?.map { it.toMovie(baseUrl, username, password) } ?: emptyList()
+                return response.body()?.map { it.toMovie(this.baseUrl, this.username, this.password) } ?: emptyList()
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -60,13 +61,14 @@ class XtreamRepository {
 
     private fun XtreamStream.toMovie(baseUrl: String, user: String, pass: String): Movie {
         val streamUrl = "${baseUrl}live/$user/$pass/${this.streamId}.ts"
+        // Ensure Movie parameters match exactly with Movie.kt
+        // Movie(id, title, logo, url, category)
         return Movie(
             id = this.streamId.toString(),
             title = this.name,
             logo = this.streamIcon ?: "",
             url = streamUrl,
-            category = "IPTV", // O category_id
-            country = "Global"
+            category = "IPTV"
         )
     }
 }
