@@ -29,7 +29,17 @@ fun MovieDetailScreen(
     
     val context = LocalContext.current
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
+        val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setAllowCrossProtocolRedirects(true)
+            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(15000)
+
+        val dataSourceFactory = androidx.media3.datasource.DefaultDataSource.Factory(context, httpDataSourceFactory)
+
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(dataSourceFactory))
+            .build().apply {
             playWhenReady = true
         }
     }
