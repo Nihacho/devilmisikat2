@@ -3,10 +3,9 @@ package com.example.proyectofinal.data.model
 import java.util.UUID
 
 data class Movie(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val title: String,
-    val logo: String?,
+    val logo: String, // <--- Add this line
     val url: String,
-    val category: String = "General",
-    val country: String = ""
+    val category: String
 )

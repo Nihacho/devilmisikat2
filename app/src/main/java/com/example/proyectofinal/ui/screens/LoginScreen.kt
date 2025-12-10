@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -131,39 +132,29 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Fondo Superior con Ola Personalizada
+            // Fondo Superior con Gradiente (Sin Ola, más minimalista y premium)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp) 
+                    .height(300.dp) // Más alto para dar aire
             ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val width = size.width
-                    val height = size.height
-
-                    val path = Path().apply {
-                        moveTo(0f, 0f)
-                        lineTo(width, 0f)
-                        lineTo(width, height * 0.6f) 
-                        cubicTo(
-                            width * 0.7f, height * 0.55f, 
-                            width * 0.35f, height * 1.05f,  
-                            0f, height * 0.75f            
-                        )
-                        lineTo(0f, 0f) 
-                        close()
-                    }
-
-                    drawPath(
-                        path = path,
+                 Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                primaryColor,
-                                Color(0xFF8B0000)
+                                Color(0xFFE53935), // RedGradientStart
+                                Color(0xFFB71C1C),  // RedGradientEnd
+                                Color.Transparent // Fade out
                             ),
                             startY = 0f,
-                            endY = height
+                            endY = size.height
                         )
+                    )
+                    // Círculos decorativos sutiles
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.1f),
+                        radius = size.width * 0.4f,
+                        center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * 0.2f)
                     )
                 }
             }
@@ -268,16 +259,38 @@ fun LoginScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
-                        .shadow(4.dp, RoundedCornerShape(25.dp)),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                    shape = RoundedCornerShape(25.dp),
+                        .height(56.dp) // Más alto para touch target mejor
+                        .shadow(8.dp, RoundedCornerShape(16.dp), spotColor = primaryColor.copy(alpha = 0.5f)), // Sombra de color
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent, // Transparente para usar gradiente en background
+                        disabledContainerColor = Color.Gray
+                    ),
+                    contentPadding = PaddingValues(), // Eliminar padding default para el gradiente
+                    shape = RoundedCornerShape(16.dp),
                     enabled = !isLoading
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text(if (isLoginMode) "Sign In" else "Sign Up", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (!isLoading) 
+                                    Modifier.background(
+                                        Brush.horizontalGradient(listOf(Color(0xFFE53935), Color(0xFFB71C1C)))
+                                    ) 
+                                else Modifier.background(Color.Gray)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                if (isLoginMode) "INICIAR SESIÓN" else "REGISTRARSE", 
+                                fontSize = 16.sp, 
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                        }
                     }
                 }
 
@@ -370,15 +383,19 @@ fun CustomTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = Color.LightGray) },
+        label = { Text(placeholder) }, // Label animado mejor que placeholder estático
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Color(0xFFF5F5F5),
-            unfocusedContainerColor = Color(0xFFF5F5F5),
-            focusedBorderColor = Color.Transparent,
-            unfocusedBorderColor = Color.Transparent
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color(0xFFF9F9F9),
+            focusedBorderColor = Color(0xFFD32F2F), // Rojo al enfocar
+            unfocusedBorderColor = Color(0xFFE0E0E0),
+            focusedLabelColor = Color(0xFFD32F2F),
+            cursorColor = Color(0xFFD32F2F),
+            focusedTextColor = Color.Black, // Asegurar contraste
+            unfocusedTextColor = Color.Black
         ),
         shape = RoundedCornerShape(12.dp)
     )

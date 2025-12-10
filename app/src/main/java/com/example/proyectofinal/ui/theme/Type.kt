@@ -16,10 +16,13 @@ val provider = GoogleFont.Provider(
 )
 
 // Definición de Playfair Display (Serif)
-val PlayfairFamily = FontFamily(
-    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Black), // 900
-    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Bold), // 700
-    Font(googleFont = GoogleFont("Playfair Display"), fontProvider = provider, weight = FontWeight.Normal) // 400
+// Definición de Outfit (Sans-Serif Moderno)
+val OutfitFamily = FontFamily(
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider, weight = FontWeight.Black), // 900
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider, weight = FontWeight.Bold), // 700
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider, weight = FontWeight.SemiBold), // 600
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider, weight = FontWeight.Medium), // 500
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider, weight = FontWeight.Normal) // 400
 )
 
 // Definición de Lato (Sans-Serif)
@@ -31,36 +34,46 @@ val LatoFamily = FontFamily(
 
 val Typography = Typography(
     // Título Principal de Pantalla: "Sing In"
+    // Título Principal de Pantalla
     headlineLarge = TextStyle(
-        fontFamily = PlayfairFamily,
-        fontWeight = FontWeight.Black,
-        fontSize = 34.sp,
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 32.sp,
         lineHeight = 40.sp,
-        letterSpacing = 0.sp
+        letterSpacing = (-0.5).sp
     ),
     // Título del Logo: "DEVILMISIKAT"
     titleLarge = TextStyle(
-        fontFamily = PlayfairFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Black,
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+        letterSpacing = 1.sp
+    ),
+    // Botones de Acción: "Sing In", "Sing Up"
+    // Botones de Acción
+    labelLarge = TextStyle(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.1.sp
+    ),
+    // Subtítulos destacados
+    headlineMedium = TextStyle(
+        fontFamily = OutfitFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
-    // Botones de Acción: "Sing In", "Sing Up"
-    labelLarge = TextStyle(
-        fontFamily = LatoFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    ),
-    // Texto de Campos (Input): Email, Password (lo que escribe el usuario)
+    // Texto de Campos (Input)
     bodyLarge = TextStyle(
         fontFamily = LatoFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
+        letterSpacing = 0.25.sp
     ),
     // Placeholder (Pistas) y Subtítulos suaves
     bodyMedium = TextStyle(

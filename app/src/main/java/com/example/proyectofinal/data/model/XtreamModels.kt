@@ -38,5 +38,6 @@ data class XtreamStream(
     @SerializedName("custom_sid") val customSid: String?,
     @SerializedName("tv_archive") val tvArchive: Int,
     @SerializedName("direct_source") val directSource: String?,
-    @SerializedName("tv_archive_duration") val tvArchiveDuration: Int
+    @SerializedName("tv_archive_duration") val tvArchiveDuration: Int,
+    @SerializedName("container_extension") val containerExtension: String?
 )

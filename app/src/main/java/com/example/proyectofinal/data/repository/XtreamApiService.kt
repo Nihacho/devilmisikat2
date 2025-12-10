@@ -19,4 +19,18 @@ interface XtreamApiService {
         @Query("password") pass: String,
         @Query("action") action: String = "get_live_streams"
     ): Response<List<XtreamStream>>
+
+    @GET("player_api.php")
+    suspend fun getVodStreams(
+        @Query("username") user: String,
+        @Query("password") pass: String,
+        @Query("action") action: String = "get_vod_streams"
+    ): Response<List<XtreamStream>>
+
+    @GET("player_api.php")
+    suspend fun getSeries(
+        @Query("username") user: String,
+        @Query("password") pass: String,
+        @Query("action") action: String = "get_series"
+    ): Response<List<XtreamStream>>
 }

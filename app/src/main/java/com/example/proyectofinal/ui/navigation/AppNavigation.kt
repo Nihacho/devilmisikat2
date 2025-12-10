@@ -1,4 +1,7 @@
 package com.example.proyectofinal.ui.navigation
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
@@ -12,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.proyectofinal.data.model.UserRole
+import com.example.proyectofinal.data.model.Movie // <--- Added this import
 import com.example.proyectofinal.ui.screens.AdminScreen
 import com.example.proyectofinal.ui.screens.LoginScreen
 import com.example.proyectofinal.ui.screens.MainScreen
@@ -25,6 +29,8 @@ sealed class Screen(val route: String) {
     object MovieDetail : Screen("movie_detail/{movieId}") {
         fun createRoute(movieId: String) = "movie_detail/$movieId"
     }
+    object IptvLogin : Screen("iptv_login")
+    object IptvContent : Screen("iptv_content")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +41,7 @@ fun AppNavigation(
 ) {
     val navController = rememberNavController()
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
-    
+
     // Shared ViewModel
     val moviesViewModel: MoviesViewModel = viewModel()
 
@@ -72,6 +78,9 @@ fun AppNavigation(
                         navController.navigate(Screen.Login.route) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToIptv = {
+                        navController.navigate(Screen.IptvLogin.route)
                     },
                     onMovieClick = { movie ->
                         // navigate to detail or play directly? Detail for now
@@ -110,13 +119,35 @@ fun AppNavigation(
                     }
                 )
             }
+
+            // IPTV Login
+            composable(Screen.IptvLogin.route) {
+                com.example.proyectofinal.ui.screens.IptvLoginScreen(
+                    viewModel = moviesViewModel,
+                    onLoginSuccess = {
+                        navController.navigate(Screen.IptvContent.route) {
+                            popUpTo(Screen.IptvLogin.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            // IPTV Content (Tabs: TV, Movies, Series)
+            composable(Screen.IptvContent.route) {
+                com.example.proyectofinal.ui.screens.IptvScreen(
+                    viewModel = moviesViewModel,
+                    onMovieClick = { movie ->
+                        navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                    }
+                )
+            }
         }
-        
+
         // Reproductor de Video (Global Overlay)
         com.example.proyectofinal.ui.screens.VideoPlayerOverlay(
             viewModel = moviesViewModel,
             onMovieClick = { movie ->
-                 navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                navController.navigate(Screen.MovieDetail.createRoute(movie.id))
             }
         )
     }

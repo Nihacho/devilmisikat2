@@ -49,9 +49,10 @@ class XtreamRepository {
     suspend fun getLiveStreams(): List<Movie> {
         val service = this.apiService ?: return emptyList()
         try {
+             // ... existing code ...
             val response = service.getLiveStreams(this.username, this.password)
             if (response.isSuccessful) {
-                return response.body()?.map { it.toMovie(this.baseUrl, this.username, this.password) } ?: emptyList()
+                return response.body()?.map { it.toMovie(this.baseUrl, this.username, this.password, "Live") } ?: emptyList()
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -59,16 +60,58 @@ class XtreamRepository {
         return emptyList()
     }
 
-    private fun XtreamStream.toMovie(baseUrl: String, user: String, pass: String): Movie {
-        val streamUrl = "${baseUrl}live/$user/$pass/${this.streamId}.ts"
-        // Ensure Movie parameters match exactly with Movie.kt
-        // Movie(id, title, logo, url, category)
+    suspend fun getVodStreams(): List<Movie> {
+        val service = this.apiService ?: return emptyList()
+        try {
+            val response = service.getVodStreams(this.username, this.password)
+            if (response.isSuccessful) {
+                return response.body()?.map { it.toMovie(this.baseUrl, this.username, this.password, "VOD") } ?: emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    suspend fun getSeries(): List<Movie> {
+        val service = this.apiService ?: return emptyList()
+        try {
+            val response = service.getSeries(this.username, this.password)
+            if (response.isSuccessful) {
+                return response.body()?.map { it.toMovie(this.baseUrl, this.username, this.password, "Series") } ?: emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    private fun XtreamStream.toMovie(baseUrl: String, user: String, pass: String, type: String): Movie {
+        // VOD/Series often use /movie/ or /series/ prefix or just extension change.
+        // Standard Xtream:
+        // Live: http://server:port/live/user/pass/id.ts
+        // VOD: http://server:port/movie/user/pass/id.container_extension
+        // Series: http://server:port/series/user/pass/id.container_extension
+        
+        val prefix = when(type) {
+            "Live" -> "live"
+            "VOD" -> "movie"
+            "Series" -> "series"
+            else -> "live"
+        }
+        
+        // Use container_extension if available (e.g., mp4, mkv), otherwise default
+        val ext = this.containerExtension ?: if (type == "Live") "ts" else "mp4"
+        val extension = if (ext.startsWith(".")) ext else ".$ext"
+        
+        val streamUrl = "${baseUrl}$prefix/$user/$pass/${this.streamId}$extension"
+        
         return Movie(
             id = this.streamId.toString(),
             title = this.name,
             logo = this.streamIcon ?: "",
             url = streamUrl,
-            category = "IPTV"
+            category = if (type == "Live") "TV en Vivo" else type // or use pure type
         )
     }
 }

@@ -14,9 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.proyectofinal.data.model.Movie
@@ -30,34 +28,37 @@ fun SearchScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    
-    val categories = listOf("Animadas", "Deportes", "Películas", "Noticias")
-    
-    val searchResults = remember(query) {
+
+    val movies by viewModel.movies.collectAsState()
+    val categories = remember(movies) {
+        movies.map { it.category }.distinct().sorted()
+    }
+
+    val searchResults = remember(query, movies) {
         viewModel.searchMovies(query)
     }
-    
-    val categoryResults = remember(selectedCategory) {
+
+    val categoryResults = remember(selectedCategory, movies) {
         if (selectedCategory != null) {
-            viewModel.getMoviesByCategory(selectedCategory!!)
+            movies.filter { it.category == selectedCategory }
         } else {
             emptyList()
         }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        // Search Bar
+        // Search Bar - Premium Style
         OutlinedTextField(
             value = query,
-            onValueChange = { 
-                query = it 
+            onValueChange = {
+                query = it
                 selectedCategory = null // Reset category when searching
             },
             label = { Text("Buscar películas") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (query.isNotEmpty() || selectedCategory != null) {
-                    IconButton(onClick = { 
+                    IconButton(onClick = {
                         query = ""
                         selectedCategory = null
                     }) {
@@ -65,7 +66,19 @@ fun SearchScreen(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = androidx.compose.ui.graphics.Color(0xFF2C2C2C),
+                unfocusedContainerColor = androidx.compose.ui.graphics.Color(0xFF1E1E1E),
+                focusedBorderColor = androidx.compose.ui.graphics.Color(0xFFD32F2F),
+                unfocusedBorderColor = androidx.compose.ui.graphics.Color(0xFF3C3C3C),
+                focusedLabelColor = androidx.compose.ui.graphics.Color(0xFFD32F2F),
+                unfocusedLabelColor = androidx.compose.ui.graphics.Color.Gray,
+                focusedTextColor = androidx.compose.ui.graphics.Color.White,
+                unfocusedTextColor = androidx.compose.ui.graphics.Color.White,
+                cursorColor = androidx.compose.ui.graphics.Color(0xFFD32F2F)
+            ),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -86,7 +99,7 @@ fun SearchScreen(
         } else {
             // Results
             val moviesToShow = if (selectedCategory != null) categoryResults else searchResults
-            
+
             if (selectedCategory != null) {
                 Text("Categoría: $selectedCategory", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -116,10 +129,19 @@ fun CategoryCard(category: String, onClick: () -> Unit) {
             .height(100.dp)
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        colors = CardDefaults.cardColors(
+            containerColor = androidx.compose.ui.graphics.Color(0xFF2C2C2C)
+        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = category, style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = category,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = androidx.compose.ui.graphics.Color.White
+            )
         }
     }
 }
@@ -130,17 +152,43 @@ fun SearchMovieItem(movie: Movie, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = androidx.compose.ui.graphics.Color(0xFF1E1E1E)
+        ),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
     ) {
-        Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = movie.logo,
-                contentDescription = null,
-                modifier = Modifier.size(60.dp),
-                contentScale = ContentScale.Crop
-            )
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Card(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                modifier = Modifier.size(60.dp)
+            ) {
+                AsyncImage(
+                    model = movie.logo,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
             Spacer(modifier = Modifier.width(16.dp))
-            Text(text = movie.title, style = MaterialTheme.typography.bodyLarge)
+            Column {
+                Text(
+                    text = movie.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    ),
+                    color = androidx.compose.ui.graphics.Color.White
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = movie.category,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = androidx.compose.ui.graphics.Color.Gray
+                )
+            }
         }
     }
 }

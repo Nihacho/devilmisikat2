@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -75,6 +77,19 @@ fun VideoPlayerOverlay(
         onDispose { exoPlayer.release() }
     }
 
+    // Estado de reproducción
+    var isPlaying by remember { mutableStateOf(exoPlayer.isPlaying) }
+
+    DisposableEffect(exoPlayer) {
+        val listener = object : androidx.media3.common.Player.Listener {
+            override fun onIsPlayingChanged(isPlayingVal: Boolean) {
+                isPlaying = isPlayingVal
+            }
+        }
+        exoPlayer.addListener(listener)
+        onDispose { exoPlayer.removeListener(listener) }
+    }
+
     // Cargar la película cuando cambia
     LaunchedEffect(currentMovie) {
         currentMovie?.let {
@@ -105,7 +120,14 @@ fun VideoPlayerOverlay(
                 enter = slideInVertically(initialOffsetY = { it }),
                 exit = slideOutVertically(targetOffsetY = { it })
             ) {
-                MiniPlayer(viewModel = viewModel, exoPlayer = exoPlayer)
+                MiniPlayer(
+                    viewModel = viewModel, 
+                    exoPlayer = exoPlayer,
+                    isPlaying = isPlaying,
+                    onPlayPause = {
+                        if (isPlaying) exoPlayer.pause() else exoPlayer.play()
+                    }
+                )
             }
         }
     }
@@ -265,7 +287,9 @@ fun ExpandedPlayer(
 @Composable
 fun MiniPlayer(
     viewModel: MoviesViewModel,
-    exoPlayer: ExoPlayer
+    exoPlayer: ExoPlayer,
+    isPlaying: Boolean,
+    onPlayPause: () -> Unit
 ) {
     val movie by viewModel.currentPlayingMovie.collectAsState()
 
@@ -311,8 +335,16 @@ fun MiniPlayer(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Reproduciendo...",
+                    text = if (isPlaying) "Reproduciendo..." else "Pausado",
                     style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            // Botón Play/Pause
+            IconButton(onClick = onPlayPause) {
+                Icon(
+                    imageVector = if (isPlaying) androidx.compose.material.icons.Icons.Default.Pause else androidx.compose.material.icons.Icons.Default.PlayArrow,
+                    contentDescription = if (isPlaying) "Pausar" else "Reproducir"
                 )
             }
 
