@@ -8,7 +8,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -16,6 +15,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,8 +28,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.proyectofinal.data.repository.AuthRepository
 import com.example.proyectofinal.data.sensors.ActivityRecognitionHelper
+import com.google.firebase.auth.FirebaseAuth
 import kotlin.math.sqrt
 
+
+private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(
@@ -64,7 +68,7 @@ fun AdminScreen(
     val sensorListener = remember {
         object : SensorEventListener {
             val historialAceleracion = ArrayDeque<Float>(15)
-            val muestrasCalibacion = mutableListOf<Float>()
+            val muestrasCalibracion = mutableListOf<Float>()
             val muestrasRequeridas = 30
 
             override fun onSensorChanged(event: SensorEvent?) {
@@ -76,13 +80,13 @@ fun AdminScreen(
                 val magnitud = sqrt(x * x + y * y + z * z)
 
                 if (!calibracionCompleta) {
-                    muestrasCalibacion.add(magnitud)
-                    if (muestrasCalibacion.size >= muestrasRequeridas) {
+                    muestrasCalibracion.add(magnitud)
+                    if (muestrasCalibracion.size >= muestrasRequeridas) {
                         calibracionCompleta = true
                         estadoMovimiento = "✅ Listo"
                         tipoMovimiento = "Sistema calibrado"
                     } else {
-                        val progreso = (muestrasCalibacion.size * 100) / muestrasRequeridas
+                        val progreso = (muestrasCalibracion.size * 100) / muestrasRequeridas
                         estadoMovimiento = "Calibrando... $progreso%"
                     }
                 } else {
@@ -178,6 +182,7 @@ fun AdminScreen(
                 actions = {
                     TextButton(
                         onClick = {
+                            // Se llama a la función del repositorio y luego al callback de navegación
                             authRepository.logout()
                             onLogout()
                         }
@@ -339,7 +344,6 @@ fun AdminScreen(
                 }
             }
 
-            //hola hijos de perra
             Spacer(modifier = Modifier.weight(1f))
 
             Card(
@@ -358,3 +362,11 @@ fun AdminScreen(
         }
     }
 }
+
+private fun AuthRepository.logout() {
+
+    auth.signOut()
+}
+
+
+

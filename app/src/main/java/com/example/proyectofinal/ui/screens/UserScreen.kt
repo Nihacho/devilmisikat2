@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import com.example.proyectofinal.data.model.User
 import com.example.proyectofinal.data.repository.AuthRepository
+import androidx.compose.foundation.clickable
 
 @Composable
 fun UserScreen(
