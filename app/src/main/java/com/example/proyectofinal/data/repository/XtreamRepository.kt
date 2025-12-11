@@ -2,6 +2,7 @@ package com.example.proyectofinal.data.repository
 
 import com.example.proyectofinal.data.model.Movie
 import com.example.proyectofinal.data.model.XtreamAuthResponse
+import com.example.proyectofinal.data.model.XtreamSeriesInfo
 import com.example.proyectofinal.data.model.XtreamStream
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -86,6 +87,19 @@ class XtreamRepository {
         return emptyList()
     }
 
+    suspend fun getSeriesInfo(seriesId: String): XtreamSeriesInfo? {
+        val service = this.apiService ?: return null
+        try {
+            val response = service.getSeriesInfo(this.username, this.password, seriesId = seriesId)
+            if (response.isSuccessful) {
+                return response.body()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
     private fun XtreamStream.toMovie(baseUrl: String, user: String, pass: String, type: String): Movie {
         // VOD/Series often use /movie/ or /series/ prefix or just extension change.
         // Standard Xtream:
@@ -104,14 +118,17 @@ class XtreamRepository {
         val ext = this.containerExtension ?: if (type == "Live") "ts" else "mp4"
         val extension = if (ext.startsWith(".")) ext else ".$ext"
         
+        // Para series, usamos streamId como ID, pero guardamos seriesId para obtener info
         val streamUrl = "${baseUrl}$prefix/$user/$pass/${this.streamId}$extension"
         
         return Movie(
-            id = this.streamId.toString(),
+            id = if (type == "Series") "series_${this.streamId}" else this.streamId.toString(),
             title = this.name,
-            logo = this.streamIcon ?: "",
+            logo = this.streamIcon ?: this.cover ?: "",
             url = streamUrl,
-            category = if (type == "Live") "TV en Vivo" else type // or use pure type
+            category = if (type == "Live") "TV en Vivo" else type,
+            seriesId = if (type == "Series") this.streamId.toString() else null,
+            plot = this.plot
         )
     }
 }

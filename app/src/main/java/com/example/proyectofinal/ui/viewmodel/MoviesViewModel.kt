@@ -1,15 +1,16 @@
-package com.example.proyectofinal.ui.viewmodel
-
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.proyectofinal.data.model.Movie
 import com.example.proyectofinal.data.repository.MovieRepository
+import com.example.proyectofinal.data.preferences.IptvPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class MoviesViewModel : ViewModel() {
+class MoviesViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = MovieRepository()
 
     private val _movies = MutableStateFlow<List<Movie>>(emptyList())
@@ -42,8 +43,51 @@ class MoviesViewModel : ViewModel() {
     private val _isPlayerMinimized = MutableStateFlow(false)
     val isPlayerMinimized: StateFlow<Boolean> = _isPlayerMinimized.asStateFlow()
 
+    // IPTV Preferences
+    private val iptvPreferences = IptvPreferences(application.applicationContext)
+
     init {
         fetchMovies()
+        // Cargar automáticamente IPTV si hay credenciales guardadas
+        loadSavedIptvCredentials()
+    }
+
+    private fun loadSavedIptvCredentials() {
+        viewModelScope.launch {
+            val credentials = iptvPreferences.credentials.first()
+            if (credentials.isLoggedIn && credentials.serverUrl.isNotEmpty()) {
+                // Auto-login con credenciales guardadas
+                _isIptvLoggedIn.value = true
+                // Cargar contenido IPTV automáticamente
+                loadIptvContent(credentials.serverUrl, credentials.username, credentials.password)
+            }
+        }
+    }
+
+    suspend fun loginIptv(serverUrl: String, username: String, password: String): Result<Unit> {
+        return try {
+            _isIptvLoading.value = true
+            // Guardar credenciales
+            iptvPreferences.saveIptvCredentials(serverUrl, username, password)
+            // Cargar contenido
+            loadIptvContent(serverUrl, username, password)
+            _isIptvLoggedIn.value = true
+            _isIptvLoading.value = false
+            Result.success(Unit)
+        } catch (e: Exception) {
+            _isIptvLoading.value = false
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun loadIptvContent(serverUrl: String, username: String, password: String) {
+        val repo = xtreamRepository
+        repo.login(serverUrl, username, password)
+        val channels = repo.getLiveStreams()
+        val vods = repo.getVodStreams()
+        val series = repo.getSeries()
+        val allContent = channels + vods + series
+        addIptvMovies(allContent)
     }
 
     private fun fetchMovies() {
@@ -64,7 +108,18 @@ class MoviesViewModel : ViewModel() {
     }
 
     fun getMovieById(id: String): Movie? {
-        return _movies.value.find { it.id == id }
+        // Verificar si existe en la lista de movies
+        val existingMovie = _movies.value.find { it.id == id }
+        if (existingMovie != null) return existingMovie
+        
+        // Si no existe y es un episodio temporal, devolver null para manejarlo en la pantalla
+        return temporaryMovie
+    }
+
+    private var temporaryMovie: Movie? = null
+
+    fun setTemporaryMovie(movie: Movie) {
+        temporaryMovie = movie
     }
 
     fun getMoviesByCategory(category: String): List<Movie> {
@@ -92,6 +147,14 @@ class MoviesViewModel : ViewModel() {
             currentLists[listName] = list
             _userLists.value = currentLists
         }
+    }
+
+    fun removeMovieFromList(listName: String, movie: Movie) {
+        val currentLists = _userLists.value.toMutableMap()
+        val list = currentLists[listName]?.toMutableList() ?: return
+        list.removeAll { it.id == movie.id }
+        currentLists[listName] = list
+        _userLists.value = currentLists
     }
 
     // Funciones del Reproductor
@@ -144,5 +207,27 @@ class MoviesViewModel : ViewModel() {
     suspend fun updateUserProfile(firstName: String, lastName: String) {
         com.example.proyectofinal.data.repository.AuthRepository()
             .updateUserProfile(firstName, lastName)
+    }
+
+    // Series functionality
+    private val xtreamRepository = com.example.proyectofinal.data.repository.XtreamRepository()
+
+    suspend fun getSeriesInfo(seriesId: String): com.example.proyectofinal.data.model.XtreamSeriesInfo? {
+        return xtreamRepository.getSeriesInfo(seriesId)
+    }
+
+    fun buildEpisodeUrl(seriesId: String, episode: com.example.proyectofinal.data.model.XtreamEpisode): String {
+        // Get baseUrl, username, password from a logged-in IPTV session
+        // For now, we'll build it based on existing movie URL structure
+        // URL format: http://server:port/series/username/password/episodeId.ext
+        val series = movies.value.find { it.seriesId == seriesId }
+        if (series != null && series.url.isNotEmpty()) {
+            val baseUrl = series.url.substringBefore("/series/")
+            val credentials = series.url.substringAfter("/series/").substringBeforeLast("/")
+            val ext = episode.containerExtension ?: "mp4"
+            val extension = if (ext.startsWith(".")) ext else ".$ext"
+            return "${baseUrl}/series/${credentials}/${episode.id}$extension"
+        }
+        return ""
     }
 }

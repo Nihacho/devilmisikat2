@@ -139,14 +139,8 @@ fun IptvLoginScreen(
                     errorMessage = null
                     viewModel.setIptvLoading(true)
                     scope.launch {
-                        val result = repository.login(url, username, password)
+                        val result = viewModel.loginIptv(url, username, password)
                         result.onSuccess {
-                            val channels = repository.getLiveStreams()
-                            val vods = repository.getVodStreams()
-                            val series = repository.getSeries()
-                            
-                            val allContent = channels + vods + series
-                            viewModel.addIptvMovies(allContent)
                             isLoading = false
                             onLoginSuccess()
                         }.onFailure {

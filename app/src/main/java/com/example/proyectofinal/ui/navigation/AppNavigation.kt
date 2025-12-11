@@ -29,6 +29,12 @@ sealed class Screen(val route: String) {
     object MovieDetail : Screen("movie_detail/{movieId}") {
         fun createRoute(movieId: String) = "movie_detail/$movieId"
     }
+    object SeriesDetail : Screen("series_detail/{seriesId}") {
+        fun createRoute(seriesId: String) = "series_detail/$seriesId"
+    }
+    object EpisodePlayer : Screen("episode_player/{episodeId}") {
+        fun createRoute(episodeId: String) = "episode_player/$episodeId"
+    }
     object IptvLogin : Screen("iptv_login")
     object IptvContent : Screen("iptv_content")
 }
@@ -42,8 +48,13 @@ fun AppNavigation(
     val navController = rememberNavController()
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
 
-    // Shared ViewModel
-    val moviesViewModel: MoviesViewModel = viewModel()
+    // Shared ViewModel con Application context
+    val context = LocalContext.current
+    val moviesViewModel: MoviesViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+            context.applicationContext as android.app.Application
+        )
+    )
 
     Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
         NavHost(
@@ -83,8 +94,12 @@ fun AppNavigation(
                         navController.navigate(Screen.IptvLogin.route)
                     },
                     onMovieClick = { movie ->
-                        // navigate to detail or play directly? Detail for now
-                        navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                        // Detectar si es serie o película/canal
+                        if (movie.seriesId != null) {
+                            navController.navigate(Screen.SeriesDetail.createRoute(movie.seriesId))
+                        } else {
+                            navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                        }
                     }
                 )
             }
@@ -137,7 +152,63 @@ fun AppNavigation(
                 com.example.proyectofinal.ui.screens.IptvScreen(
                     viewModel = moviesViewModel,
                     onMovieClick = { movie ->
-                        navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                        if (movie.seriesId != null) {
+                            navController.navigate(Screen.SeriesDetail.createRoute(movie.seriesId))
+                        } else {
+                            navController.navigate(Screen.MovieDetail.createRoute(movie.id))
+                        }
+                    }
+                )
+            }
+
+            // Series Detail Screen
+            composable(
+                route = Screen.SeriesDetail.route,
+                arguments = listOf(
+                    navArgument("seriesId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val seriesId = backStackEntry.arguments?.getString("seriesId") ?: ""
+                val series = moviesViewModel.movies.collectAsState().value.find { it.seriesId == seriesId }
+                if (series != null) {
+                    com.example.proyectofinal.ui.screens.SeriesDetailScreen(
+                        viewModel = moviesViewModel,
+                        series = series,
+                        onBack = {
+                            navController.popBackStack()
+                        },
+                        onEpisodeClick = { episodeUrl, episodeTitle ->
+                            // Crear Movie temporal para el episodio
+                            val episodeMovie = Movie(
+                                id = "episode_${System.currentTimeMillis()}",
+                                title = episodeTitle,
+                                logo = series.logo,
+                                url = episodeUrl,
+                                category = "Series"
+                            )
+                            moviesViewModel.setTemporaryMovie(episodeMovie)
+                            navController.navigate(Screen.EpisodePlayer.createRoute(episodeMovie.id))
+                        }
+                    )
+                }
+            }
+
+            // Episode Player Screen
+            composable(
+                route = Screen.EpisodePlayer.route,
+                arguments = listOf(
+                    navArgument("episodeId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val episodeId = backStackEntry.arguments?.getString("episodeId") ?: ""
+                
+                MovieDetailScreen(
+                    viewModel = moviesViewModel,
+                    movieId = episodeId,
+                    onBack = {
+                        navController.popBackStack()
                     }
                 )
             }

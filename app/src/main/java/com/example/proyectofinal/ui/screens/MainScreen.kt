@@ -31,16 +31,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.proyectofinal.data.model.Movie
 import com.example.proyectofinal.ui.viewmodel.MoviesViewModel
 
-sealed class BottomNavItem(
+sealed class NavigationItem(
     val route: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val label: String
 ) {
-    object Home : BottomNavItem("home", Icons.Default.Home, "Home")
-    object Search : BottomNavItem("search", Icons.Default.Search, "Buscar")
-    object Iptv : BottomNavItem("iptv", Icons.Default.Tv, "IPTV")
-    object Lists : BottomNavItem("lists", Icons.AutoMirrored.Filled.List, "Listas")
-    object User : BottomNavItem("user", Icons.Default.Person, "Usuario")
+    object Inicio : NavigationItem("home", Icons.Default.Home, "Inicio")
+    object Busqueda : NavigationItem("search", Icons.Default.Search, "Buscar")
+    object TelevisionEnVivo : NavigationItem("iptv", Icons.Default.Tv, "IPTV")
+    object MisListas : NavigationItem("lists", Icons.AutoMirrored.Filled.List, "Mis Listas")
+    object Perfil : NavigationItem("user", Icons.Default.Person, "Perfil")
 }
 
 @Composable
@@ -55,11 +55,11 @@ fun MainScreen(
     val navController = rememberNavController()
 
     val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Search,
-        BottomNavItem.Iptv,
-        BottomNavItem.Lists,
-        BottomNavItem.User
+        NavigationItem.Inicio,
+        NavigationItem.Busqueda,
+        NavigationItem.TelevisionEnVivo,
+        NavigationItem.MisListas,
+        NavigationItem.Perfil
     )
 
     val currentPlayingMovie by viewModel.currentPlayingMovie.collectAsState()
@@ -100,11 +100,13 @@ fun MainScreen(
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
     
-                    // Re-defining items for the new NavigationBar structure as per the provided snippet
+                    // Items completos de navegación
                     val newNavItems = listOf(
                         Triple("home", "Inicio", Icons.Default.Home),
-                        Triple("iptv", "TV/Series", Icons.Default.Tv), // Nombre más claro
-                        Triple("user", "Perfil", Icons.Default.Person) // Changed from "profile" to "user" to match existing route
+                        Triple("search", "Buscar", Icons.Default.Search),
+                        Triple("iptv", "IPTV", Icons.Default.Tv),
+                        Triple("lists", "Mis Listas", Icons.AutoMirrored.Filled.List),
+                        Triple("user", "Perfil", Icons.Default.Person)
                     )
     
                     newNavItems.forEach { (route, label, icon) ->
@@ -152,20 +154,20 @@ fun MainScreen(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Home.route,
+            startDestination = NavigationItem.Inicio.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.Home.route) {
+            composable(NavigationItem.Inicio.route) {
                 HomeScreen(
                     viewModel = viewModel,
                     onLogout = onLogout,
                     onMovieClick = onMovieClick
                 )
             }
-            composable(BottomNavItem.Search.route) {
+            composable(NavigationItem.Busqueda.route) {
                 SearchScreen(viewModel = viewModel, onMovieClick = onMovieClick)
             }
-            composable(BottomNavItem.Iptv.route) {
+            composable(NavigationItem.TelevisionEnVivo.route) {
                 val isLoggedIn by viewModel.isIptvLoggedIn.collectAsState()
                 if (isLoggedIn) {
                     IptvScreen(viewModel = viewModel, onMovieClick = onMovieClick)
@@ -173,10 +175,10 @@ fun MainScreen(
                     IptvLoginScreen(viewModel = viewModel, onLoginSuccess = { /* Handled by VM observing */ })
                 }
             }
-            composable(BottomNavItem.Lists.route) {
+            composable(NavigationItem.MisListas.route) {
                 MyListsScreen(viewModel = viewModel, onMovieClick = onMovieClick)
             }
-            composable(BottomNavItem.User.route) {
+            composable(NavigationItem.Perfil.route) {
                 UserScreen(
                     isDarkTheme = isDarkTheme,
                     onThemeChanged = onThemeChanged,

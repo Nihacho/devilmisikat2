@@ -102,22 +102,40 @@ fun HomeScreen(
                         }
                     }
                     
-                    // Popular (Always at top)
+                    // Categorías destacadas - Lo mejor de lo mejor
                     item {
-                        SectionTitle(title = "Tendencias")
-                        MovieRow(movies = movies.take(10), onMovieClick = onMovieClick)
+                        SectionTitle(title = "🔥 Tendencias")
+                        MovieRow(movies = movies.take(12), onMovieClick = onMovieClick)
                     }
 
-                    // Dynamic Categories (Countries, Genres, etc.)
-                    // Exclude "Tendencias" or generic if needed, but here we just list all unique categories
-                    val categories = movies.map { it.category }.distinct().filter { it != "Tendencias" && it != "IPTV" }.sorted()
+                    // Mapeo de categorías principales - solo las mejores
+                    val featuredCategories = listOf(
+                        "Destacados" to listOf("Animation", "Kids", "Family", "Animación"),
+                        "Noticias" to listOf("News", "Noticias"),
+                        "Deportes" to listOf("Sports", "Deportes"),
+                        "Música" to listOf("Music", "Música"),
+                        "Documentales" to listOf("Documentary", "Documentales")
+                    )
                     
-                    items(categories) { category ->
-                         val categoryMovies = movies.filter { it.category == category }
-                         if (categoryMovies.isNotEmpty()) {
-                             SectionTitle(title = category)
-                             MovieRow(movies = categoryMovies, onMovieClick = onMovieClick)
-                         }
+                    items(featuredCategories) { (displayName, categoryKeys) ->
+                        val categoryMovies = movies.filter { movie ->
+                            categoryKeys.any { key -> 
+                                movie.category.contains(key, ignoreCase = true)
+                            }
+                        }.take(12) // Solo las mejores de cada categoría
+                        
+                        if (categoryMovies.isNotEmpty()) {
+                            val emoji = when(displayName) {
+                                "Destacados" -> "🎬"
+                                "Noticias" -> "📰"
+                                "Deportes" -> "⚽"
+                                "Música" -> "🎵"
+                                "Documentales" -> "🎥"
+                                else -> ""
+                            }
+                            SectionTitle(title = "$emoji $displayName")
+                            MovieRow(movies = categoryMovies, onMovieClick = onMovieClick)
+                        }
                     }
                 }
             }
